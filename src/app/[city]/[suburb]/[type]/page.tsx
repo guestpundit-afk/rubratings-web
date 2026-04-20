@@ -14,6 +14,7 @@ import { getEditorial } from '@/lib/editorial';
 import { generateEditorial } from '@/lib/editorial-generated';
 import ClusterMap from '@/components/ClusterMap';
 import VenueCard from '@/components/VenueCard';
+import CrossTaxonomyLinks from '@/components/CrossTaxonomyLinks';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -312,14 +313,26 @@ export default async function Page({ params }: { params: Promise<Params> }) {
               )}
 
               <CrossTaxonomyLinks
-                citySlug={p.city}
-                suburbSlug={p.suburb}
-                suburbName={suburbRec.name}
-                cityName={cityName}
-                currentServiceSlug={p.type}
-                currentServiceName={serviceType.name}
-                siblingTypes={siblingTypes}
-                siblingSuburbs={siblingSuburbs}
+                sections={[
+                  {
+                    kind: 'service',
+                    heading: `Other massage in ${suburbRec.name}`,
+                    links: siblingTypes.map((s) => ({
+                      href: `/${p.city}/${p.suburb}/${s.slug}`,
+                      label: s.name,
+                      venueCount: s.venueCount,
+                    })),
+                  },
+                  {
+                    kind: 'geo',
+                    heading: `${serviceType.name} elsewhere in ${cityName}`,
+                    links: siblingSuburbs.map((s) => ({
+                      href: `/${p.city}/${s.slug.replace(new RegExp(`^${p.city}-`), '')}/${p.type}`,
+                      label: s.name,
+                      venueCount: s.venueCount,
+                    })),
+                  },
+                ]}
               />
             </>
           )}
@@ -417,69 +430,3 @@ function NoindexNotice({
   );
 }
 
-function CrossTaxonomyLinks({
-  citySlug,
-  suburbSlug,
-  suburbName,
-  cityName,
-  currentServiceSlug,
-  currentServiceName,
-  siblingTypes,
-  siblingSuburbs,
-}: {
-  citySlug: string;
-  suburbSlug: string;
-  suburbName: string;
-  cityName: string;
-  currentServiceSlug: string;
-  currentServiceName: string;
-  siblingTypes: { slug: string; name: string; venueCount: number }[];
-  siblingSuburbs: { slug: string; name: string; venueCount: number }[];
-}) {
-  const suburbSegmentFromSlug = (s: string) => s.replace(new RegExp(`^${citySlug}-`), '');
-  return (
-    <section className="mt-14 grid gap-10 sm:grid-cols-2">
-      {siblingTypes.length > 0 && (
-        <div>
-          <h2 className="font-display text-2xl font-bold text-ink">
-            Other massage in {suburbName}
-          </h2>
-          <ul className="mt-4 space-y-2">
-            {siblingTypes.slice(0, 6).map((s) => (
-              <li key={s.slug}>
-                <Link
-                  href={`/${citySlug}/${suburbSegmentFromSlug(suburbSlug)}/${s.slug}`}
-                  className="flex items-baseline justify-between gap-3 py-2 border-b border-ink-20 hover:border-terracotta group"
-                >
-                  <span className="text-ink group-hover:text-terracotta font-medium">{s.name}</span>
-                  <span className="text-sm text-ink-60 tabular-nums">{s.venueCount} venues</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {siblingSuburbs.length > 0 && (
-        <div>
-          <h2 className="font-display text-2xl font-bold text-ink">
-            {currentServiceName} elsewhere in {cityName}
-          </h2>
-          <ul className="mt-4 space-y-2">
-            {siblingSuburbs.slice(0, 6).map((s) => (
-              <li key={s.slug}>
-                <Link
-                  href={`/${citySlug}/${suburbSegmentFromSlug(s.slug)}/${currentServiceSlug}`}
-                  className="flex items-baseline justify-between gap-3 py-2 border-b border-ink-20 hover:border-terracotta group"
-                >
-                  <span className="text-ink group-hover:text-terracotta font-medium">{s.name}</span>
-                  <span className="text-sm text-ink-60 tabular-nums">{s.venueCount} venues</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-    </section>
-  );
-}

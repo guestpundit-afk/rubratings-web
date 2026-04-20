@@ -80,6 +80,7 @@ export type Venue = {
   namedTherapistCount: number;
   metaTitle: string | null;
   metaDescription: string | null;
+  coverPhoto: string | null;
   suburb?: Suburb | null;
   city?: City | null;
   serviceTypes?: ServiceType[];
@@ -264,6 +265,82 @@ export async function getQualifyingCombos(minVenues = 3): Promise<InventoryCombo
   return [...counts.values()]
     .filter((c) => c.venueCount >= minVenues)
     .sort((a, b) => b.venueCount - a.venueCount);
+}
+
+export async function getAllCities(): Promise<City[]> {
+  const data = await strapiGet<StrapiList<City>>(
+    'cities',
+    { sort: ['name:asc'], pagination: { pageSize: 50 } },
+    'cities:all',
+  );
+  return data.data;
+}
+
+export async function getAllServiceTypes(): Promise<ServiceType[]> {
+  const data = await strapiGet<StrapiList<ServiceType>>(
+    'service-types',
+    { sort: ['name:asc'], pagination: { pageSize: 100 } },
+    'service-types:all',
+  );
+  return data.data;
+}
+
+export async function getAllSuburbs(): Promise<Suburb[]> {
+  const data = await strapiGet<StrapiList<Suburb>>(
+    'suburbs',
+    {
+      populate: ['city'],
+      sort: ['name:asc'],
+      pagination: { pageSize: 500 },
+    },
+    'suburbs:all',
+  );
+  return data.data;
+}
+
+export type VenueSearchOpts = {
+  citySlug?: string;
+  suburbSlug?: string;
+  serviceTypeSlug?: string;
+  healthFund?: 'any' | 'probable-plus' | 'confirmed';
+  minFitScore?: number;
+  pageSize?: number;
+};
+
+export async function searchVenues(opts: VenueSearchOpts): Promise<Venue[]> {
+  const filters: Record<string, unknown> = {};
+  if (opts.citySlug) filters.city = { slug: { $eq: opts.citySlug } };
+  if (opts.suburbSlug) filters.suburb = { slug: { $eq: opts.suburbSlug } };
+  if (opts.serviceTypeSlug) filters.serviceTypes = { slug: { $eq: opts.serviceTypeSlug } };
+  if (opts.healthFund === 'confirmed') {
+    filters.healthFundStatus = { $eq: 'confirmed' };
+  } else if (opts.healthFund === 'probable-plus') {
+    filters.healthFundStatus = { $in: ['confirmed', 'probable'] };
+  }
+  if (opts.minFitScore && opts.minFitScore > 0) {
+    filters.fitScore = { $gte: opts.minFitScore };
+  }
+
+  const tag = [
+    'search',
+    opts.citySlug ?? '_',
+    opts.suburbSlug ?? '_',
+    opts.serviceTypeSlug ?? '_',
+    opts.healthFund ?? '_',
+    String(opts.minFitScore ?? 0),
+  ].join(':');
+
+  const data = await strapiGet<StrapiList<Venue>>(
+    'venues',
+    {
+      filters,
+      populate: ['suburb', 'city', 'serviceTypes'],
+      sort: ['tier:asc', 'fitScore:desc', 'ratingCount:desc', 'name:asc'],
+      pagination: { pageSize: opts.pageSize ?? 50 },
+    },
+    tag,
+  );
+  return data.data;
 }
 
 export async function getSiblingSuburbsForServiceType(opts: {

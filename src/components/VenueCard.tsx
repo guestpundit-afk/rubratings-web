@@ -1,4 +1,6 @@
 import type { Venue } from '@/lib/api';
+import Image from "next/image";
+import VenuePlaceholderImage from "@/components/VenuePlaceholderImage";
 
 type Props = {
   venue: Venue;
@@ -32,7 +34,26 @@ export default function VenueCard({ venue, rank, contextCopy }: Props) {
   const hfLabel = HF_LABEL[venue.healthFundStatus] ?? null;
 
   return (
-    <article className="group relative flex flex-col gap-4 p-6 bg-sand-60 border border-ink-20 rounded-lg hover:border-terracotta transition-colors">
+    <article className="group relative flex flex-col bg-sand-60 border border-ink-20 rounded-lg overflow-hidden hover:border-terracotta transition-colors">
+      <div className="relative aspect-[4/3] overflow-hidden">
+        {venue.coverPhoto ? (
+          <Image
+            src={venue.coverPhoto}
+            alt={venue.name}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, 33vw"
+          />
+        ) : (
+          <VenuePlaceholderImage
+            venueName={venue.name}
+            suburb={venue.suburb?.name}
+            size="card"
+            style={{ width: "100%", height: "100%" }}
+          />
+        )}
+      </div>
+      <div className="flex flex-col gap-4 p-6">
       <div className="flex items-start gap-4">
         <div className="shrink-0 font-display text-5xl font-black leading-none text-terracotta tabular-nums">
           {String(rank).padStart(2, '0')}
@@ -119,6 +140,7 @@ export default function VenueCard({ venue, rank, contextCopy }: Props) {
             {venue.freshaUrl ? 'Book on Fresha ↗' : 'Visit website ↗'}
           </a>
         )}
+      </div>
       </div>
     </article>
   );

@@ -39,6 +39,21 @@ export default function Home() {
                 A–B–C with health-fund badges and Fresha booking links.
               </p>
             </Link>
+            <Link
+              href="/search"
+              className="group block p-6 bg-sand-60 border border-ink-20 rounded-lg hover:border-terracotta transition-colors"
+            >
+              <div className="text-xs uppercase tracking-widest text-sage font-semibold">
+                Directory
+              </div>
+              <div className="mt-1 font-display text-2xl font-bold text-ink group-hover:text-terracotta">
+                Search & filter
+              </div>
+              <p className="mt-2 text-sm text-ink-80">
+                Filter every venue by city, suburb, service type, health-fund rebate, and our
+                internal fit score.
+              </p>
+            </Link>
           </div>
         </section>
       </div>
